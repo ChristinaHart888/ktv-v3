@@ -38,9 +38,8 @@ export default function Footer() {
           stroke="currentColor"
           strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5V6a2 2 0 012-2h3.5" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 10.5V6a2 2 0 00-2-2h-3.5" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18" />
+          <rect x="7" y="4" width="10" height="16" rx="1" ry="1" />
+          <circle cx="12" cy="12" r="2.5" />
         </svg>
       ),
     },
@@ -64,8 +63,8 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-gray-800 text-white py-3 mt-auto">
-      <nav className="max-w-lg mx-auto flex">
+    <footer className="app-footer fixed inset-x-0 bottom-0 bg-gray-800 text-white py-3 z-30">
+      <nav className="app-footer-nav max-w-lg mx-auto flex justify-between">
         {tabs.map((t) => {
           const target = `/${t.id}`;
           const isActive = pathname === target || pathname.startsWith(target + "/");
