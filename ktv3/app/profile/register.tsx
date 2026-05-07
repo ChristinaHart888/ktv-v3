@@ -1,8 +1,16 @@
+"use client";
+
+import { useState } from "react";
+
 type RegisterPageProps = {
   onSwitchToLogin?: () => void;
 };
 
 export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   return (
     <div
       className="relative flex items-center justify-center h-full px-4"
@@ -22,13 +30,32 @@ export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
         <form action="" className="space-y-5">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-200 mb-2">
-              Email
+              <span className="inline-flex items-center gap-2">
+                <span>Email</span>
+                {emailError ? (
+                  <span className="text-sm font-semibold text-rose-300">{emailError}</span>
+                ) : null}
+              </span>
             </label>
             <input
               type="email"
               id="email"
               autoComplete="email"
-              className="w-full border border-slate-700 bg-slate-950/60 text-white px-3 py-2 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              onChange={(e) => {
+                const value = e.currentTarget.value;
+                if (value && emailRegex.test(value)) {
+                  setEmailError(null);
+                }
+              }}
+              onBlur={(e) => {
+                const value = e.currentTarget.value;
+                if (value && !emailRegex.test(value)) {
+                  setEmailError("Please enter a valid email address");
+                }
+              }}
+              className={`w-full border bg-slate-950/60 text-white px-3 py-2 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:border-transparent transition ${
+                emailError ? "border-rose-400 ring-2 ring-rose-400 focus:ring-rose-400" : "border-slate-700 focus:ring-blue-500"
+              }`}
             />
           </div>
           <div>
