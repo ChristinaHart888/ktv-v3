@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type LoginPageProps = {
   onSwitchToRegister?: () => void;
@@ -8,10 +8,33 @@ type LoginPageProps = {
 
 export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 5000); // 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    const email = (document.getElementById("email") as HTMLInputElement).value;
+    const password = (document.getElementById("password") as HTMLInputElement).value;
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
+    setEmailError(null);
+
     // Check if is localhost
     const url = window.location.hostname === "localhost" ? "http://localhost:3001/api/accounts/login" : "ktv3.ktv3.org/api/login";
     fetch(url, {
@@ -20,18 +43,21 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: (document.getElementById("email") as HTMLInputElement).value,
-        password: (document.getElementById("password") as HTMLInputElement).value,
+        email,
+        password,
       }),
     })
-      .then((res) => res.json())
-      .then((data) => {
+      .then((res) => res.json().then((data) => ({ res, data })))
+      .then(({ res, data }) => {
+        if (!res.ok) {
+          throw new Error(data.message || "Login failed");
+        }
         console.log(data);
         // Handle successful login, e.g., save token, redirect, etc.
       })
       .catch((err) => {
         console.error("Login failed:", err);
-        // Handle login error, e.g., show error message
+        setError(err.message || "Login failed");
       })
       .finally(() => {
         setIsLoading(false);
@@ -51,16 +77,39 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
       <div className="relative bg-slate-900/90 border border-slate-700 rounded-lg shadow-lg p-4 md:p-8 w-full max-w-sm md:max-w-md text-white">
         <h1 className="text-2xl md:text-3xl font-bold text-center mb-4">Login</h1>
         <p className="text-center text-slate-200 mb-6 text-sm md:text-base">Please log in to access your account.</p>
-        <form action="" className="space-y-5" onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-700 mb-2">
-              Email
+              <span className="inline-flex items-center gap-2">
+                <span>Email</span>
+                {emailError ? (
+                  <span className="text-sm font-semibold text-rose-300">{emailError}</span>
+                ) : null}
+              </span>
             </label>
             <input
               type="email"
               id="email"
               autoComplete="email"
-              className="w-full border border-slate-700 bg-slate-950/60 text-white px-3 py-2 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              onChange={(e) => {
+                const value = e.currentTarget.value;
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (value && emailRegex.test(value)) {
+                  setEmailError(null);
+                }
+              }}
+              onBlur={(e) => {
+                const value = e.currentTarget.value;
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (value && !emailRegex.test(value)) {
+                  setEmailError("Please enter a valid email address");
+                }
+              }}
+              className={`w-full bg-slate-950/60 text-white px-3 py-2 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                emailError
+                  ? "border-rose-400 ring-2 ring-rose-400 focus:ring-rose-400"
+                  : "border-slate-700"
+              }`}
             />
           </div>
           <div>
@@ -112,6 +161,23 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
           <a href="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</a>
         </p>
       </div>
+
+      {error && (
+        <div className="fixed bottom-16 right-4 z-50">
+          <div className="bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 max-w-xs">
+            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm">{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-2 text-white hover:text-gray-200 flex-shrink-0"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
